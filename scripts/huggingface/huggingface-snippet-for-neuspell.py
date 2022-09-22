@@ -48,7 +48,12 @@ def _custom_bert_tokenize(batch_sentences, bert_tokenizer, padding_idx=None, max
 
     out = [_custom_bert_tokenize_sentence(text, bert_tokenizer, max_len) for text in batch_sentences]
     batch_sentences, batch_tokens, batch_splits = list(zip(*out))
-    batch_encoded_dicts = [bert_tokenizer.encode_plus(tokens) for tokens in batch_tokens]
+    #batch_encoded_dicts = [bert_tokenizer.encode_plus(tokens) for tokens in batch_tokens]  # encode/encode_plus() does not take List[str] anymore.
+    batch_encoded_dicts = []
+    for tokens in batch_tokens:
+        input_ids = [bert_tokenizer.cls_token_id] + [bert_tokenizer.convert_tokens_to_ids(token) for token in tokens] + [bert_tokenizer.sep_token_id]
+        batch_encoded_dicts.append({"input_ids": input_ids,
+                                    "attention_mask": [1] * len(input_ids)})  # 'token_type_ids' is not used
     batch_input_ids = pad_sequence(
         [torch.tensor(encoded_dict["input_ids"]) for encoded_dict in batch_encoded_dicts], batch_first=True,
         padding_value=padding_idx)
